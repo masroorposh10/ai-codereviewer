@@ -51,9 +51,11 @@ const minimatch_1 = __importDefault(__nccwpck_require__(2002));
 const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
+const AZURE_OPENAI_ENDPOINT = core.getInput("AZURE_OPENAI_ENDPOINT")
 const octokit = new rest_1.Octokit({ auth: GITHUB_TOKEN });
 const openai = new openai_1.default({
-    apiKey: OPENAI_API_KEY,
+  endpoint: AZURE_OPENAI_ENDPOINT,  
+  apiKey: OPENAI_API_KEY,
 });
 function getPRDetails() {
     var _a, _b;
@@ -135,33 +137,28 @@ ${chunk.changes
 `;
 }
 function getAIResponse(prompt) {
-    var _a, _b;
-    return __awaiter(this, void 0, void 0, function* () {
-        const queryConfig = {
-            model: OPENAI_API_MODEL,
-            temperature: 0.2,
-            max_tokens: 700,
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-        };
-        try {
-            const response = yield openai.chat.completions.create(Object.assign(Object.assign(Object.assign({}, queryConfig), (OPENAI_API_MODEL === "gpt-4-1106-preview"
-                ? { response_format: { type: "json_object" } }
-                : {})), { messages: [
-                    {
-                        role: "system",
-                        content: prompt,
-                    },
-                ] }));
-            const res = ((_b = (_a = response.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || "{}";
-            return JSON.parse(res).reviews;
-        }
-        catch (error) {
-            console.error("Error:", error);
-            return null;
-        }
-    });
+  return __awaiter(this, void 0, void 0, function* () {
+      const queryConfig = {
+          model: OPENAI_API_MODEL,  // Update the model name according to what's available on Azure
+          temperature: 0.2,
+          maxTokens: 700,
+          topP: 1,
+          frequencyPenalty: 0,
+          presencePenalty: 0,
+          query: prompt
+      };
+
+      try {
+          // Use the proper API call for Azure OpenAI
+          const response = yield openai.Completions.complete(queryConfig);
+          // Handle the response appropriately based on Azure's format
+          const res = response.choices && response.choices.length > 0 ? response.choices[0].text.trim() : "{}";
+          return JSON.parse(res).reviews;
+      } catch (error) {
+          console.error("Error:", error);
+          return null;
+      }
+  });
 }
 function createComment(file, chunk, aiResponses) {
     return aiResponses.flatMap((aiResponse) => {

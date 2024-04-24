@@ -4,17 +4,23 @@ import OpenAI from "openai";
 import { Octokit } from "@octokit/rest";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
+import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
+
 
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
-
+const AZURE_OPENAI_ENDPOINT: string = core.getInput("AZURE_OPENAI_ENDPOINT")
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
-
+// const openai = new OpenAI({
+//   apiKey: OPENAI_API_KEY,
+// });
+const openai = new OpenAIClient({
+  endpoint: AZURE_OPENAI_ENDPOINT,
+  Credential: new AzureKeyCredential(OPENAI_API_KEY)
+}
+);
 interface PRDetails {
   owner: string;
   repo: string;
@@ -110,41 +116,62 @@ ${chunk.changes
 `;
 }
 
-async function getAIResponse(prompt: string): Promise<Array<{
-  lineNumber: string;
-  reviewComment: string;
-}> | null> {
+async function getAIResponse(prompt: string) {
   const queryConfig = {
     model: OPENAI_API_MODEL,
     temperature: 0.2,
-    max_tokens: 700,
-    top_p: 1,
-    frequency_penalty: 0,
-    presence_penalty: 0,
+    maxTokens: 700,
+    topP: 1,
+    frequencyPenalty: 0,
+    presencePenalty: 0,
+    prompt
   };
 
   try {
-    const response = await openai.chat.completions.create({
-      ...queryConfig,
-      // return JSON if the model supports it:
-      ...(OPENAI_API_MODEL === "gpt-4-1106-preview"
-        ? { response_format: { type: "json_object" } }
-        : {}),
-      messages: [
-        {
-          role: "system",
-          content: prompt,
-        },
-      ],
-    });
-
-    const res = response.choices[0].message?.content?.trim() || "{}";
-    return JSON.parse(res).reviews;
+    const response = await openai.Completion.create(queryConfig);
+    return response.choices.map((choice: { text: string; }) => choice.text.trim());
   } catch (error) {
     console.error("Error:", error);
     return null;
   }
 }
+
+
+// async function getAIResponse(prompt: string): Promise<Array<{
+//   lineNumber: string;
+//   reviewComment: string;
+// }> | null> {
+//   const queryConfig = {
+//     model: OPENAI_API_MODEL,
+//     temperature: 0.2,
+//     max_tokens: 700,
+//     top_p: 1,
+//     frequency_penalty: 0,
+//     presence_penalty: 0,
+//   };
+
+//   try {
+//     const response = await openai.completions.create({
+//       ...queryConfig,
+//       // return JSON if the model supports it:
+//       ...(OPENAI_API_MODEL === "gpt-4-1106-preview"
+//         ? { response_format: { type: "json_object" } }
+//         : {}),
+//       messages: [
+//         {
+//           role: "system",
+//           content: prompt,
+//         },
+//       ],
+//     });
+
+//     const res = response.choices[0].message?.content?.trim() || "{}";
+//     return JSON.parse(res).reviews;
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return null;
+//   }
+// }
 
 function createComment(
   file: File,
@@ -188,6 +215,8 @@ async function main() {
     readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8")
   );
 
+
+  //sk-proj-QgThzUUl8CzmnqiRWEuRT3BlbkFJ0SmNpVe2rbadLGhwFtoY
   if (eventData.action === "opened") {
     diff = await getDiff(
       prDetails.owner,
