@@ -5,7 +5,7 @@ inputs:
     description: "GitHub token to interact with the repository."
     required: true
   AZURE_OPENAI_ENDPOINT:
-    description: "AZure openai endpoint"
+    description: "Azure openai endpoint"
     required: true
   OPENAI_API_KEY:
     description: "OpenAI API key for GPT."
