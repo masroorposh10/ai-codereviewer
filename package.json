@@ -6,6 +6,7 @@
   "author": "Ville Saukkonen",
   "license": "MIT",
   "scripts": {
+    "azure": "/test.ts",
     "build": "tsc",
     "package": "ncc build --source-map --license licenses.txt",
     "format": "prettier --write .",
@@ -13,7 +14,9 @@
   },
   "dependencies": {
     "@actions/core": "^1.10.0",
+    "@azure/openai": "^1.0.0-beta.12",
     "@octokit/rest": "^19.0.7",
+    "dotenv": "^16.4.5",
     "minimatch": "^7.4.2",
     "openai": "^4.20.1",
     "parse-diff": "^0.11.1",
@@ -22,7 +25,8 @@
   "devDependencies": {
     "@types/node": "^18.15.5",
     "@vercel/ncc": "^0.36.1",
+    "nodemon": "^3.1.0",
     "prettier": "^2.8.6",
-    "typescript": "^5.0.2"
+    "typescript": "^5.4.5"
   }
 }
