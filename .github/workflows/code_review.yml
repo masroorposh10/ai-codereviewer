@@ -15,6 +15,7 @@ jobs:
         uses: masroorposh10/ai-codereviewer@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          OPENAI_API_ENDPOINT: ${{secrets.AZURE_OPENAI_API_ENDPOINT}}
           OPENAI_API_MODEL: "gpt-4-1106-preview"
           exclude: "yarn.lock,dist/**"

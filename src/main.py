@@ -8,11 +8,17 @@ import openai
 # Get tokens and configs
 GITHUB_TOKEN = config("GITHUB_TOKEN")
 OPENAI_API_KEY = config("OPENAI_API_KEY")
-OPENAI_API_MODEL = config("OPENAI_API_MODEL", default="gpt-4")
+OPENAI_API_ENDPOINT = config(
+    "OPENAI_API_ENDPOINT"
+)  # Endpoint of your Azure OpenAI service
+OPENAI_API_MODEL = config("OPENAI_API_MODEL", default="gpt-4-v0613")
 
-# Instantiate Github & OpenAI client
+# Instantiate Github client
 g = Github(GITHUB_TOKEN)
+
+# Configure the OpenAI API key and endpoint
 openai.api_key = OPENAI_API_KEY
+openai.api_base = OPENAI_API_ENDPOINT  # Set the API endpoint to Azure OpenAI endpoint
 
 
 def get_pr_details():
@@ -49,35 +55,30 @@ def analyze_code(diff, pr_details):
 
 def create_prompt(file, hunk, pr_details):
     return f"""
-	Your task is to review pull requests. Instructions:
+    Your task is to review pull requests. Instructions:
 
-	- Pull request title: {pr_details.title}
-	- Pull request description: {pr_details.body}
-	
-	Review the following code diff in the file "{file.path}":
-	
-	```diff
-	{hunk}
-	```
-	"""
+    - Pull request title: {pr_details.title}
+    - Pull request description: {pr_details.body}
+    
+    Review the following code diff in the file "{file.path}":
+    
+    ```diff
+    {hunk}
+    ```
+    """
 
 
 def get_ai_response(prompt):
-    # Define the query config for the model
-    query_config = {
-        "model": OPENAI_API_MODEL,
-        "temperature": 0.2,
-        "max_tokens": 700,
-        "top_p": 1,
-        "frequency_penalty": 0,
-        "presence_penalty": 0,
-    }
-
     try:
         response = openai.Completion.create(
-            engine="text-davinci-003", prompt=prompt, temperature=0.5, max_tokens=100
+            model=OPENAI_API_MODEL,  # Use custom model ID
+            prompt=prompt,
+            temperature=0.5,
+            max_tokens=100,
         )
-        return response["choices"][0]["message"]["content"].strip().split("\n")
+        return (
+            response.choices[0].text.strip().split("\n")
+        )  # Adjusted for expected response structure
     except Exception as error:
         print(f"Error: {error}")
         return None
