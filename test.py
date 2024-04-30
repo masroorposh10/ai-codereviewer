@@ -16,7 +16,9 @@ deployment_name = "gpt-4-v0613"  # This will correspond to the custom name you c
 # Send a completion call to generate an answer
 print("Sending a test completion job")
 start_phrase = "Write a tagline for an ice cream shop. "
-response = client.completions.create(
-    model=deployment_name, prompt=start_phrase, max_tokens=10
+response = client.chat.completions.create(
+    model=deployment_name, 
+    messages=[{"role":"system", "content":"review this code: print(Hello)"}],
+    max_tokens=20
 )
-print(start_phrase + response.choices[0].text)
+print(response.choices[0].message.content.strip().split("\n"))

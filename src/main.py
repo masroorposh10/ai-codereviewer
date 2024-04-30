@@ -3,22 +3,21 @@ import json
 from decouple import config
 from github import Github, InputFileContent
 from unidiff import PatchSet
-import openai
+from openai import AzureOpenAI
 
 # Get tokens and configs
 GITHUB_TOKEN = config("GITHUB_TOKEN")
 OPENAI_API_KEY = config("OPENAI_API_KEY")
-OPENAI_API_ENDPOINT = config(
-    "OPENAI_API_ENDPOINT"
-)  # Endpoint of your Azure OpenAI service
 OPENAI_API_MODEL = config("OPENAI_API_MODEL", default="gpt-4-v0613")
-
-# Instantiate Github client
+OPENAI_API_ENDPOINT = config("OPENAI_API_ENDPOINT")
+# Instantiate Github & OpenAI client
 g = Github(GITHUB_TOKEN)
 
-# Configure the OpenAI API key and endpoint
-openai.api_key = OPENAI_API_KEY
-openai.api_base = OPENAI_API_ENDPOINT  # Set the API endpoint to Azure OpenAI endpoint
+client = AzureOpenAI(
+    api_key=OPENAI_API_KEY,
+    api_version="2024-02-01",
+    azure_endpoint=OPENAI_API_ENDPOINT
+)
 
 
 def get_pr_details():
@@ -55,30 +54,32 @@ def analyze_code(diff, pr_details):
 
 def create_prompt(file, hunk, pr_details):
     return f"""
-    Your task is to review pull requests. Instructions:
+	Your task is to review pull requests. Instructions:
 
-    - Pull request title: {pr_details.title}
-    - Pull request description: {pr_details.body}
-    
-    Review the following code diff in the file "{file.path}":
-    
-    ```diff
-    {hunk}
-    ```
-    """
+	- Pull request title: {pr_details.title}
+	- Pull request description: {pr_details.body}
+	
+	Review the following code diff in the file "{file.path}":
+	
+	```diff
+	{hunk}
+	```
+	"""
 
 
 def get_ai_response(prompt):
+    # Define the query config for the model
     try:
-        response = openai.Completion.create(
-            model=OPENAI_API_MODEL,  # Use custom model ID
-            prompt=prompt,
-            temperature=0.5,
-            max_tokens=100,
+        response = client.chat.completions.create(
+            model=OPENAI_API_MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            max_tokens=700,
+            temperature=0.2,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
         )
-        return (
-            response.choices[0].text.strip().split("\n")
-        )  # Adjusted for expected response structure
+        return response.choices[0].message.content.strip().split("\n")
     except Exception as error:
         print(f"Error: {error}")
         return None
