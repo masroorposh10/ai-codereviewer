@@ -8,13 +8,26 @@ const azureApiKey = process.env.AZURE_OPENAI_KEY || '';
 
 const prompt = ['What is Azure OpenAI?'];
 
+async function main() {
+  console.log('=== Get completions Sample ===');
+  const api_version="2024-03-01-preview";
+  const deploymentName = 'gpt-4-1106';
+  const client = new OpenAIClient(
+    endpoint,
+    new AzureKeyCredential(azureApiKey),
+    api_version
+    deploymentName,
+  );
+  const result = await client.getCompletions(deploymentName, prompt, {
+    maxTokens: 200,
+    temperature: 0.25
+  });
 
-// Configure your Azure OpenAI client
-const client = new OpenAIClient({
-    endpoint: endpoint,
-    credential: new AzureKeyCredential(azureApiKey),
-    apiVersion: "2024-03-01-preview"  // Make sure this matches the API version you intend to use
+  for (const choice of result.choices) {
+    console.log(choice.text);
+  }
+}
+
+main().catch((err) => {
+  console.error('The sample encountered an error:', err);
 });
-
-// Set the model you want to use
-const modelName = "gpt-4-1106";
