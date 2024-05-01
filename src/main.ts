@@ -15,9 +15,6 @@ const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
 const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
 
-console.log(AZURE_OPENAI_API_ENDPOINT + "endpoint");
-console.log(AZURE_OPENAI_API_KEY + "key");
-console.log(AZURE_OPENAI_API_MODEL + " model");
 
 const openai = new OpenAIClient(
   AZURE_OPENAI_API_ENDPOINT,
