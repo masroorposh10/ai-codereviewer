@@ -1,6 +1,5 @@
 import { readFileSync } from "fs";
 import * as core from "@actions/core";
-import OpenAI from "openai";
 import { Octokit } from "@octokit/rest";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
@@ -9,10 +8,14 @@ const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const AZURE_OPENAI_API_KEY: string = core.getInput("AZURE_OPENAI_API_KEY");
 const AZURE_OPENAI_API_MODEL: string = core.getInput("AZURE_OPENAI_API_MODEL");
 const AZURE_OPENAI_API_ENDPOINT: string = core.getInput("AZURE_OPENAI_API_ENDPOINT");
+
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
 const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
 
+console.log(AZURE_OPENAI_API_ENDPOINT+ "endpoint")
+console.log(AZURE_OPENAI_API_KEY+ "key")
+console.log(AZURE_OPENAI_API_MODEL+" model")
 
 const openai =  new OpenAIClient(
     AZURE_OPENAI_API_ENDPOINT, 
@@ -118,29 +121,26 @@ async function getAIResponse(prompt: string): Promise<Array<{
   lineNumber: string;
   reviewComment: string;
 }> | null> {
-  const queryConfig = {
+    const queryConfig = {
     model: AZURE_OPENAI_API_MODEL,
     temperature: 0.2,
     max_tokens: 700,
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0,
+    response_format: { type: "json_object" }
   };
 
   try {
-    const response = await openai.chat.completions.create({
-      ...queryConfig,
-      // return JSON if the model supports it:
-      ...(AZURE_OPENAI_API_MODEL === "gpt-4-v0613"
-        ? { response_format: { type: "json_object" } }
-        : {}),
-      messages: [
-        {
-          role: "system",
-          content: prompt,
-        },
-      ],
-    });
+    const response = await openai.getChatCompletions(AZURE_OPENAI_API_MODEL,
+        [
+            {
+              role: "system",
+              content: prompt,
+            },
+          ],
+      queryConfig,
+    );
 
     const res = response.choices[0].message?.content?.trim() || "{}";
     return JSON.parse(res).reviews;

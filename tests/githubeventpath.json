@@ -1,0 +1,12 @@
+{
+    "action": "synchronize",
+    "after": "689bd630dbbfef93f3c9b24b403a3295e45d05ad",
+    "before": "c193f048f1ccd97c4b41a8a21898b4666d834fa9",
+    "number": 2,
+    "repository": {
+        "name": "calculator-CI-CD",
+        "owner": {
+            "login": "masroorposh10"
+        }   
+}
+}
